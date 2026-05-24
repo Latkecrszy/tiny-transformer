@@ -1,4 +1,5 @@
 import pandas as pd
+import torch
 
 
 # Define config
@@ -41,9 +42,28 @@ def encode(text):
 def decode(tokens):
     text = ""
     for token in tokens:
-        text += token_to_char[token]
+        text += token_to_char[int(token)]
     return text
 
 
+def create_tensors(text):
+    input_window: list[list] = []
+    output_window: list[list] = []
+    start = 0
+    end = CONTEXT_LENGTH
+    tokens = encode(text)
+    while end < len(tokens):
+        input_window.append(tokens[start:end])
+        output_window.append(tokens[start+1:end+1])
+        start += 1
+        end += 1
+    input_tensor = torch.tensor(input_window)
+    output_tensor = torch.tensor(output_window)
+    return input_tensor, output_tensor
 
 
+input_tensor, output_tensor = create_tensors('sweet potato')
+print([decode(i) for i in input_tensor])
+print([decode(i) for i in output_tensor])
+print(input_tensor.shape)
+print(output_tensor.shape)

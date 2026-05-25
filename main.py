@@ -1,9 +1,26 @@
 import pandas as pd
 import torch
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
+
+
+class Data(Dataset):
+    def __init__(self, tokens: list[int], context_length):
+        super().__init__()
+        self.tokens = torch.tensor(tokens, dtype=torch.long)
+        self.context_length = context_length
+
+    def __len__(self):
+        return len(self.tokens) - self.context_length - 1
+
+    def __getitem__(self, idx):
+        return self.tokens[idx:idx + self.context_length], self.tokens[idx + 1:idx + self.context_length + 1]
 
 
 # Define config
 CONTEXT_LENGTH = 8
+EMBEDDING_DIM = 32
+BATCH_SIZE = 32
 rows = 1000
 
 
@@ -46,24 +63,10 @@ def decode(tokens):
     return text
 
 
-def create_tensors(text):
-    input_window: list[list] = []
-    output_window: list[list] = []
-    start = 0
-    end = CONTEXT_LENGTH
-    tokens = encode(text)
-    while end < len(tokens):
-        input_window.append(tokens[start:end])
-        output_window.append(tokens[start+1:end+1])
-        start += 1
-        end += 1
-    input_tensor = torch.tensor(input_window)
-    output_tensor = torch.tensor(output_window)
-    return input_tensor, output_tensor
 
-
-input_tensor, output_tensor = create_tensors('sweet potato')
-print([decode(i) for i in input_tensor])
-print([decode(i) for i in output_tensor])
-print(input_tensor.shape)
-print(output_tensor.shape)
+full_text = "".join(df['text'])
+full_tokens = encode(full_text)
+dataset = Data(full_tokens, CONTEXT_LENGTH)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+print(len(dataset))
+print(dataset[5])
